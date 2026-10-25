@@ -78,6 +78,7 @@ body{font-family:'Orbitron',sans-serif;color:#fff;min-height:100vh;overflow-x:hi
 .spinbtn{position:relative;font-family:'Luckiest Guy';font-size:50px;letter-spacing:4px;color:#fff;padding:14px 60px 8px;border-radius:60px;overflow:hidden;
  background:linear-gradient(180deg,#ff8a9a 0%,#ff2a4a 45%,#b0001c 52%,#e0102e 100%);
  box-shadow:0 0 0 4px #ffe27a,0 0 0 7px #7a4a00,0 8px 0 7px #3a1a00,0 0 40px #ff2a4a99;text-shadow:0 3px 0 #6a0010}
+.controls .spinbtn{min-width:320px;padding-left:30px;padding-right:30px}
 .spinbtn:before{content:'';position:absolute;left:8%;right:8%;top:3px;height:45%;border-radius:40px;background:linear-gradient(#ffffffaa,#fff0)}
 .spinbtn:active:not(:disabled){transform:translateY(4px)}
 .maxbet{font-family:'Luckiest Guy';font-size:18px;letter-spacing:1px;padding:12px 18px 8px;border-radius:14px;background:var(--gold);color:#3a1a00;box-shadow:0 0 0 3px #7a4a00,0 5px 0 3px #3a1a00;text-align:center;line-height:1.1}
@@ -141,6 +142,7 @@ dialog::backdrop{background:radial-gradient(circle,#0003 20%,#000d 75%)}
   .sym .e{font-size:36px}.sym{font-size:13px}
   .payline{display:none}
   .controls{flex-wrap:wrap;justify-content:center}
+  .controls .spinbtn{min-width:0}
   .spinbtn{order:-1;width:100%;text-align:center;font-size:40px;margin:6px 4px 10px}
   .led b{font-size:22px}
   .bulbs i{width:9px;height:9px}

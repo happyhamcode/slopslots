@@ -209,7 +209,11 @@ async function doSpin() {
     live.push(runners[k].done);
   });
   msg((refill ? 'FREE REFILL! ' : '') + (live.length ? 'PRESS STOP ON EACH REEL' : ''));
+  const spinBtn = $('#spin');
+  if (live.length) { spinBtn.textContent = 'STOP ALL'; spinBtn.disabled = false; }
   await Promise.all(live);
+  spinBtn.textContent = 'SPIN';
+  spinBtn.disabled = true;
   current = next;
   cols.forEach((_, k) => paintHold(k, 'off'));
   msg('CALCULATING SLOP…');
@@ -256,7 +260,7 @@ function showWin(name) {
 }
 
 /* ---------- wiring ---------- */
-$('#spin').onclick = doSpin;
+$('#spin').onclick = () => (spinning ? runners.forEach((_, k) => !held[k] && stopReel(k)) : doSpin());
 $('#lever').onclick = doSpin;
 $('#again').onclick = doSpin;
 $('#max').onclick = () => {
