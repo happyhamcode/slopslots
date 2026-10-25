@@ -46,6 +46,7 @@ const cols = LABELS.map((label, k) => {
   hold.setAttribute('aria-pressed', 'false');
   hold.setAttribute('aria-label', `Hold ${label} reel`);
   hold.onclick = () => {
+    if (spinning) { stopReel(k); return; }
     held[k] = !held[k];
     hold.setAttribute('aria-pressed', String(held[k]));
     hold.textContent = held[k] ? 'HELD' : 'HOLD';
@@ -72,30 +73,64 @@ function paint(k) {
 }
 const paintAll = () => cols.forEach((_, k) => paint(k));
 
-function animateReel(k, item, ms) {
+/* Manual stop: a reel free-runs over its pool (4 cycles tall, wrapping between
+   cycles 2 and 3) until stopReel() eases it onto its precomputed result. */
+const SPEED = 14; // rows per second while spinning
+const STOP_MS = reduce ? 0 : 700;
+const runners = [];
+let next = current;
+
+function startReel(k) {
   const { reel, strip } = cols[k];
   const pool = POOLS[k];
-  const fill = Array.from({ length: 16 }, () => pool[Math.floor(rand() * pool.length)]);
-  const after = [pickOther(pool, item, rand), item, pickOther(pool, item, rand)];
-  const items = [...rest[k], ...fill, ...after];
-  strip.replaceChildren(...items.map((it) => sym(it, false)));
-  const from = center(strip, 1);
-  const to = center(strip, items.length - 2);
-  reel.classList.add('moving');
-  const unblur = setTimeout(() => reel.classList.remove('moving'), ms * 0.8);
+  const L = pool.length;
+  strip.replaceChildren(...Array.from({ length: L * 4 }, (_, n) => sym(pool[n % L], false)));
+  const r = { p: L + Math.floor(rand() * L), t: performance.now(), stopping: false };
+  r.done = new Promise((res) => { r.finish = res; });
+  runners[k] = r;
+  if (!reduce) reel.classList.add('moving');
+  const frame = (now) => {
+    r.p += ((now - r.t) / 1000) * SPEED;
+    r.t = now;
+    if (r.p >= 2 * L) r.p -= L;
+    strip.style.transform = `translateY(${center(strip, r.p)}px)`;
+    r.raf = requestAnimationFrame(frame);
+  };
+  r.raf = requestAnimationFrame(frame);
+}
+
+function stopReel(k) {
+  const r = runners[k];
+  if (!r || r.stopping) return;
+  r.stopping = true;
+  cancelAnimationFrame(r.raf);
+  const { reel, strip, hold } = cols[k];
+  hold.disabled = true;
+  const pool = POOLS[k];
+  const L = pool.length;
+  const item = next[k];
+  const idx = pool.indexOf(item);
+  let final = L + idx;
+  while (final < r.p + 2) final += L;
   const anim = strip.animate(
-    [{ transform: `translateY(${from}px)` }, { transform: `translateY(${to}px)` }],
-    { duration: ms, easing: 'cubic-bezier(.12,.62,.2,1)', fill: 'forwards' },
+    [{ transform: `translateY(${center(strip, r.p)}px)` }, { transform: `translateY(${center(strip, final)}px)` }],
+    { duration: STOP_MS, easing: 'cubic-bezier(.2,.7,.25,1)', fill: 'forwards' },
   );
-  return anim.finished.then(() => {
-    clearTimeout(unblur);
+  setTimeout(() => reel.classList.remove('moving'), STOP_MS * 0.5);
+  anim.finished.then(() => {
     anim.cancel();
-    rest[k] = after;
+    rest[k] = [pool[(idx - 1 + L) % L], item, pool[(idx + 1) % L]];
     paint(k);
     reel.classList.remove('moving');
     tone(300 + k * 60, 0.07, 'square', 0.04);
+    r.finish();
   });
 }
+
+const stopNext = () => {
+  const k = runners.findIndex((r, n) => r && !held[n] && !r.stopping);
+  if (k >= 0) stopReel(k);
+};
 
 /* ---------- sound ---------- */
 let ac;
@@ -139,8 +174,18 @@ const setBusy = (b) => {
   spinning = b;
   $('#machine').classList.toggle('busy', b);
   for (const id of ['#spin', '#max', '#again']) $(id).disabled = b;
-  cols.forEach((c) => { c.hold.disabled = b; });
 };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const JACKPOT_DELAY_MS = 1000;
+
+// HOLD buttons double as STOP buttons while the reels run.
+function paintHold(k, mode) {
+  const { hold } = cols[k];
+  hold.classList.toggle('stop', mode === 'stop');
+  hold.disabled = mode === 'off';
+  hold.textContent = mode === 'stop' ? 'STOP' : held[k] ? 'HELD' : 'HOLD';
+  hold.setAttribute('aria-label', `${mode === 'stop' ? 'Stop' : 'Hold'} ${LABELS[k]} reel`);
+}
 
 async function doSpin() {
   if (spinning) return;
@@ -148,16 +193,29 @@ async function doSpin() {
   const dlg = $('#win');
   if (dlg.open) dlg.close();
   setBusy(true);
-  if (credits <= 0) { credits = START_CREDITS; msg('FREE REFILL!'); } else msg('');
+  const refill = credits <= 0;
+  if (refill) credits = START_CREDITS;
   credits--;
   renderPanels();
-  const next = spin(POOLS, held, current, rand);
+  next = spin(POOLS, held, current, rand);
   $('#lever').classList.add('pulled');
   setTimeout(() => $('#lever').classList.remove('pulled'), 300);
   tone(180, 0.15, 'sawtooth', 0.05);
-  await Promise.all(next.map((it, k) =>
-    (held[k] ? Promise.resolve() : animateReel(k, it, reduce ? 0 : 900 + k * 300))));
+  const live = [];
+  cols.forEach((_, k) => {
+    if (held[k]) { paintHold(k, 'off'); return; }
+    startReel(k);
+    paintHold(k, 'stop');
+    live.push(runners[k].done);
+  });
+  msg((refill ? 'FREE REFILL! ' : '') + (live.length ? 'PRESS STOP ON EACH REEL' : ''));
+  await Promise.all(live);
   current = next;
+  cols.forEach((_, k) => paintHold(k, 'off'));
+  msg('CALCULATING SLOP…');
+  await sleep(JACKPOT_DELAY_MS);
+  msg('');
+  cols.forEach((_, k) => paintHold(k, 'hold'));
   finish();
 }
 
@@ -216,7 +274,10 @@ $('#copy').onclick = async () => {
   setTimeout(() => { btn.innerHTML = old; }, 1500);
 };
 addEventListener('keydown', (e) => {
-  if (e.code === 'Space' && !e.target.closest?.('button, dialog')) { e.preventDefault(); doSpin(); }
+  if (e.code === 'Space' && !e.target.closest?.('button, dialog')) {
+    e.preventDefault();
+    if (spinning) stopNext(); else doSpin();
+  }
 });
 addEventListener('resize', () => { if (!spinning) paintAll(); });
 
