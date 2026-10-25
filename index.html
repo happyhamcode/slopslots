@@ -22,9 +22,7 @@
     <h2>GRAND JACKPOT</h2>
     <div class="jp"><span id="cal">1,337,420</span><small>CALORIES</small></div>
     <h2 class="gap">VIP TABLES</h2>
-    <div class="row"><span class="e">🥩</span><span><b>HIGH ROLLER</b><br>steak only, no limits</span></div>
-    <div class="row"><span class="e">🔥</span><span><b>KETO LOUNGE</b><br>carb reel disabled</span></div>
-    <div class="row"><span class="e">🌱</span><span><b>VEGGIE VAULT</b><br>plant protein only</span></div>
+    <div id="tables-list"></div>
   </div></aside>
 
   <section class="machine" id="machine" aria-label="Slop slot machine">
@@ -32,6 +30,7 @@
     <div class="body">
       <div class="bulbs" id="bulbs" aria-hidden="true"></div>
       <div class="sign"><div><span>★ SLOP-O-MATIC<span class="num"> 3000</span> ★</span></div></div>
+      <div class="tables" id="tables" role="group" aria-label="Table and allergies"></div>
       <div class="frame"><div class="reels" id="reels"></div></div>
       <p class="msg" id="msg" role="status" aria-live="polite"></p>
       <div class="controls">
@@ -60,7 +59,7 @@
     <div class="ribbon" aria-hidden="true"><span class="back">JACKPOT!</span><span class="front">JACKPOT!</span></div>
     <button class="x" id="close" type="button" aria-label="Close">✕</button>
     <div class="in">
-      <div class="title">★ YOUR SLOP BOWL ★</div>
+      <div class="title" id="win-title">★ YOUR SLOP BOWL ★</div>
       <h2 class="name" id="win-name"></h2>
       <table id="win-table"></table>
       <div class="btns">
@@ -69,6 +68,33 @@
       </div>
     </div>
     <div id="coins" aria-hidden="true"></div>
+  </div>
+</dialog>
+
+<dialog id="picker" aria-labelledby="picker-title">
+  <div class="card plain">
+    <div class="in">
+      <div class="title" id="picker-title">SET REEL</div>
+      <p class="hint">PICK ONE TO LOCK THE REEL ON IT</p>
+      <div class="opts" id="picker-opts"></div>
+      <div class="btns"><button class="maxbet" id="picker-close" type="button">CLOSE</button></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="allergy" aria-labelledby="allergy-title">
+  <div class="card plain">
+    <div class="in">
+      <div class="title" id="allergy-title">⚠ ALLERGIES &amp; AVOIDS</div>
+      <p class="hint">TICKED ITEMS NEVER SHOW UP ON THE REELS</p>
+      <div class="opts checks" id="allergy-opts"></div>
+      <p class="fine">Best guess from typical recipes. Always check real labels, this is a slot machine.</p>
+      <p class="err" id="allergy-err" role="alert"></p>
+      <div class="btns">
+        <button class="maxbet" id="allergy-clear" type="button">CLEAR ALL</button>
+        <button class="maxbet" id="allergy-ok" type="button">DONE</button>
+      </div>
+    </div>
   </div>
 </dialog>
 

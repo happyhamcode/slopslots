@@ -1,4 +1,7 @@
-import { POOLS, LABELS, spin, pickOther, bowlName, recipeText } from './slots.js';
+import {
+  TABLES, ALLERGENS, LABELS, tableById, poolsFor, emptyReels, ringOf,
+  spin, bowlName, recipeText,
+} from './slots.js';
 
 const $ = (s) => document.querySelector(s);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -15,9 +18,28 @@ const FAKE = [
   { who: 'mom_of_3', name: 'Quinoa Chaos' }, { who: '~*brad*~', name: 'Gochujang Beef' },
 ];
 
-let held = Array(6).fill(false);
-let current = spin(POOLS, held, null, rand);
-let rest = current.map((it, k) => [pickOther(POOLS[k], it, rand), it, pickOther(POOLS[k], it, rand)]);
+/* ---------- state ---------- */
+let table = tableById(store.get('table', 'open'));
+let avoid = store.get('avoid', []).filter((a) => ALLERGENS.some((x) => x.id === a));
+let pools = poolsFor(table, avoid);
+if (emptyReels(pools).length) { table = TABLES[0]; avoid = []; pools = poolsFor(table, avoid); }
+let rings = pools.map(ringOf);
+
+const randomItem = (k) => pools[k][Math.floor(rand() * pools[k].length)];
+const neighbors = (k, item) => {
+  const ring = rings[k];
+  const L = ring.length;
+  const idx = ring.indexOf(item);
+  return [ring[(idx - 1 + L) % L], item, ring[(idx + 1) % L]];
+};
+
+// Saved locks are item names; keep the ones still on this table.
+const savedLocks = store.get('locks', []);
+let held = LABELS.map((_, k) => pools[k].some((it) => it.n === savedLocks[k]));
+let current = LABELS.map((_, k) => (held[k] ? pools[k].find((it) => it.n === savedLocks[k]) : randomItem(k)));
+let rest = current.map((it, k) => neighbors(k, it));
+let next = current;
+
 let credits = store.get('credits', START_CREDITS);
 let won = store.get('won', 0);
 let streak = store.get('streak', 0);
@@ -25,6 +47,8 @@ let history = store.get('history', FAKE);
 let muted = store.get('muted', false);
 let spinning = false;
 let cal = 1337420;
+
+const saveLocks = () => store.set('locks', held.map((h, k) => (h ? current[k].n : null)));
 
 /* ---------- DOM build ---------- */
 const sym = (it, dim) => {
@@ -38,22 +62,23 @@ const sym = (it, dim) => {
 
 const cols = LABELS.map((label, k) => {
   const col = document.createElement('div');
-  const plate = Object.assign(document.createElement('div'), { className: 'plate', textContent: label });
+  const plate = Object.assign(document.createElement('button'), { className: 'plate', type: 'button', textContent: `${label} ▾` });
+  plate.setAttribute('aria-label', `Choose a ${label} and lock it`);
+  plate.onclick = () => openPicker(k);
   const reel = Object.assign(document.createElement('div'), { className: 'reel' });
   const strip = Object.assign(document.createElement('div'), { className: 'strip' });
   reel.append(strip);
-  const hold = Object.assign(document.createElement('button'), { className: 'hold', type: 'button', textContent: 'HOLD' });
+  const hold = Object.assign(document.createElement('button'), { className: 'hold', type: 'button' });
   hold.setAttribute('aria-pressed', 'false');
-  hold.setAttribute('aria-label', `Hold ${label} reel`);
   hold.onclick = () => {
     if (spinning) { stopReel(k); return; }
     held[k] = !held[k];
-    hold.setAttribute('aria-pressed', String(held[k]));
-    hold.textContent = held[k] ? 'HELD' : 'HOLD';
+    saveLocks();
+    paintHold(k, 'hold');
   };
   col.append(plate, reel, hold);
   $('#reels').append(col);
-  return { reel, strip, hold };
+  return { reel, strip, hold, plate };
 });
 $('#reels').append(Object.assign(document.createElement('div'), { className: 'payline' }));
 
@@ -73,18 +98,17 @@ function paint(k) {
 }
 const paintAll = () => cols.forEach((_, k) => paint(k));
 
-/* Manual stop: a reel free-runs over its pool (4 cycles tall, wrapping between
+/* Manual stop: a reel free-runs over its ring (4 cycles tall, wrapping between
    cycles 2 and 3) until stopReel() eases it onto its precomputed result. */
 const SPEED = 14; // rows per second while spinning
 const STOP_MS = reduce ? 0 : 700;
 const runners = [];
-let next = current;
 
 function startReel(k) {
   const { reel, strip } = cols[k];
-  const pool = POOLS[k];
-  const L = pool.length;
-  strip.replaceChildren(...Array.from({ length: L * 4 }, (_, n) => sym(pool[n % L], false)));
+  const ring = rings[k];
+  const L = ring.length;
+  strip.replaceChildren(...Array.from({ length: L * 4 }, (_, n) => sym(ring[n % L], false)));
   const r = { p: L + Math.floor(rand() * L), t: performance.now(), stopping: false };
   r.done = new Promise((res) => { r.finish = res; });
   runners[k] = r;
@@ -106,11 +130,9 @@ function stopReel(k) {
   cancelAnimationFrame(r.raf);
   const { reel, strip, hold } = cols[k];
   hold.disabled = true;
-  const pool = POOLS[k];
-  const L = pool.length;
+  const L = rings[k].length;
   const item = next[k];
-  const idx = pool.indexOf(item);
-  let final = L + idx;
+  let final = L + rings[k].indexOf(item);
   while (final < r.p + 2) final += L;
   const anim = strip.animate(
     [{ transform: `translateY(${center(strip, r.p)}px)` }, { transform: `translateY(${center(strip, final)}px)` }],
@@ -119,7 +141,7 @@ function stopReel(k) {
   setTimeout(() => reel.classList.remove('moving'), STOP_MS * 0.5);
   anim.finished.then(() => {
     anim.cancel();
-    rest[k] = [pool[(idx - 1 + L) % L], item, pool[(idx + 1) % L]];
+    rest[k] = neighbors(k, item);
     paint(k);
     reel.classList.remove('moving');
     tone(300 + k * 60, 0.07, 'square', 0.04);
@@ -168,12 +190,117 @@ setInterval(() => {
   $('#cal').textContent = cal.toLocaleString('en-US');
 }, 900);
 
-/* ---------- spin ---------- */
+/* ---------- tables, allergies, reel picker ---------- */
 const msg = (t) => { $('#msg').textContent = t; };
+
+const allergyBtn = Object.assign(document.createElement('button'), { className: 'chip warn', type: 'button', id: 'allergy-btn' });
+allergyBtn.onclick = () => $('#allergy').showModal();
+for (const t of TABLES) {
+  const chip = Object.assign(document.createElement('button'), { className: 'chip', type: 'button', textContent: `${t.e} ${t.name}` });
+  chip.dataset.table = t.id;
+  chip.onclick = () => setTable(t.id);
+  $('#tables').append(chip);
+
+  const row = document.createElement('button');
+  row.type = 'button'; row.className = 'row tbl'; row.dataset.table = t.id;
+  const e = Object.assign(document.createElement('span'), { className: 'e', textContent: t.e });
+  const txt = document.createElement('span');
+  txt.append(Object.assign(document.createElement('b'), { textContent: t.name }), document.createElement('br'), t.rule);
+  row.append(e, txt);
+  row.onclick = () => setTable(t.id);
+  $('#tables-list').append(row);
+}
+$('#tables').append(allergyBtn);
+
+function renderTables() {
+  document.querySelectorAll('[data-table]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.table === table.id)));
+  allergyBtn.textContent = `⚠ ALLERGIES${avoid.length ? ` (${avoid.length})` : ''}`;
+}
+
+// Pools changed (table or allergies): drop locks that no longer fit, re-roll reels showing banned items.
+function rebuild() {
+  rings = pools.map(ringOf);
+  cols.forEach((_, k) => {
+    if (!pools[k].includes(current[k])) { held[k] = false; current[k] = randomItem(k); }
+    rest[k] = neighbors(k, current[k]);
+    paintHold(k, 'hold');
+  });
+  next = current;
+  paintAll();
+  renderTables();
+  saveLocks();
+}
+
+function setTable(id) {
+  if (spinning) return;
+  const t = tableById(id);
+  const np = poolsFor(t, avoid);
+  const bad = emptyReels(np);
+  if (bad.length) { msg(`${t.name} HAS NO ${LABELS[bad[0]]} FOR YOUR ALLERGIES`); return; }
+  table = t; pools = np;
+  store.set('table', t.id);
+  rebuild();
+  msg(`WELCOME TO ${t.name}`);
+}
+
+const allergyOpts = $('#allergy-opts');
+for (const a of ALLERGENS) {
+  const cb = Object.assign(document.createElement('input'), { type: 'checkbox', value: a.id, checked: avoid.includes(a.id) });
+  cb.onchange = () => {
+    const wanted = [...allergyOpts.querySelectorAll('input:checked')].map((c) => c.value);
+    const np = poolsFor(table, wanted);
+    const bad = emptyReels(np);
+    if (bad.length) {
+      cb.checked = !cb.checked;
+      $('#allergy-err').textContent = `NOTHING LEFT ON ${LABELS[bad[0]]} AT ${table.name}. TRY ANOTHER TABLE.`;
+      return;
+    }
+    $('#allergy-err').textContent = '';
+    avoid = wanted; pools = np;
+    store.set('avoid', avoid);
+    rebuild();
+  };
+  const label = Object.assign(document.createElement('label'), { className: 'chk' });
+  label.append(cb, ` ${a.name}`);
+  allergyOpts.append(label);
+}
+$('#allergy-clear').onclick = () => {
+  allergyOpts.querySelectorAll('input').forEach((c) => { c.checked = false; });
+  $('#allergy-err').textContent = '';
+  avoid = []; pools = poolsFor(table, avoid);
+  store.set('avoid', avoid);
+  rebuild();
+};
+$('#allergy-ok').onclick = () => $('#allergy').close();
+
+function setLock(k, item) {
+  if (item) { held[k] = true; current[k] = item; rest[k] = neighbors(k, item); paint(k); } else held[k] = false;
+  paintHold(k, 'hold');
+  saveLocks();
+  $('#picker').close();
+}
+function openPicker(k) {
+  if (spinning) return;
+  $('#picker-title').textContent = `SET ${LABELS[k]}`;
+  const any = Object.assign(document.createElement('button'), { className: 'opt any', type: 'button', textContent: '🎲 ANY (UNLOCK)' });
+  any.setAttribute('aria-pressed', String(!held[k]));
+  any.onclick = () => setLock(k, null);
+  $('#picker-opts').replaceChildren(any, ...pools[k].map((it) => {
+    const b = Object.assign(document.createElement('button'), { className: 'opt', type: 'button', textContent: `${it.e} ${it.n}` });
+    b.setAttribute('aria-pressed', String(held[k] && current[k] === it));
+    b.onclick = () => setLock(k, it);
+    return b;
+  }));
+  $('#picker').showModal();
+}
+$('#picker-close').onclick = () => $('#picker').close();
+
+/* ---------- spin ---------- */
 const setBusy = (b) => {
   spinning = b;
   $('#machine').classList.toggle('busy', b);
   for (const id of ['#spin', '#max', '#again']) $(id).disabled = b;
+  document.querySelectorAll('.plate, [data-table], #allergy-btn').forEach((x) => { x.disabled = b; });
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const JACKPOT_DELAY_MS = 1000;
@@ -183,6 +310,7 @@ function paintHold(k, mode) {
   const { hold } = cols[k];
   hold.classList.toggle('stop', mode === 'stop');
   hold.disabled = mode === 'off';
+  hold.setAttribute('aria-pressed', String(held[k]));
   hold.textContent = mode === 'stop' ? 'STOP' : held[k] ? 'HELD' : 'HOLD';
   hold.setAttribute('aria-label', `${mode === 'stop' ? 'Stop' : 'Hold'} ${LABELS[k]} reel`);
 }
@@ -197,7 +325,7 @@ async function doSpin() {
   if (refill) credits = START_CREDITS;
   credits--;
   renderPanels();
-  next = spin(POOLS, held, current, rand);
+  next = spin(pools, held, current, rand);
   $('#lever').classList.add('pulled');
   setTimeout(() => $('#lever').classList.remove('pulled'), 300);
   tone(180, 0.15, 'sawtooth', 0.05);
@@ -235,6 +363,7 @@ function finish() {
 }
 
 function showWin(name) {
+  $('#win-title').textContent = table.id === 'open' ? '★ YOUR SLOP BOWL ★' : `★ ${table.name} BOWL ★`;
   $('#win-name').textContent = `"${name}"`;
   $('#win-table').replaceChildren(...current.map((it, k) => {
     const tr = document.createElement('tr');
@@ -265,7 +394,8 @@ $('#lever').onclick = doSpin;
 $('#again').onclick = doSpin;
 $('#max').onclick = () => {
   held = held.map(() => false);
-  cols.forEach((c) => { c.hold.setAttribute('aria-pressed', 'false'); c.hold.textContent = 'HOLD'; });
+  saveLocks();
+  cols.forEach((_, k) => paintHold(k, 'hold'));
   doSpin();
 };
 $('#close').onclick = () => $('#win').close();
@@ -273,7 +403,7 @@ $('#copy').onclick = async () => {
   const btn = $('#copy');
   const name = $('#win-name').textContent.replace(/"/g, '');
   const old = btn.innerHTML;
-  try { await navigator.clipboard.writeText(recipeText(current, name)); btn.textContent = 'COPIED!'; }
+  try { await navigator.clipboard.writeText(recipeText(current, name, table)); btn.textContent = 'COPIED!'; }
   catch { btn.textContent = 'NOPE'; }
   setTimeout(() => { btn.innerHTML = old; }, 1500);
 };
@@ -287,5 +417,7 @@ addEventListener('resize', () => { if (!spinning) paintAll(); });
 
 paintMute();
 renderPanels();
+renderTables();
+cols.forEach((_, k) => paintHold(k, 'hold'));
 document.fonts.ready.then(paintAll);
 paintAll();
