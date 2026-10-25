@@ -1,0 +1,154 @@
+:root{
+  --gold:linear-gradient(180deg,#fffbe0 0%,#ffe27a 18%,#f5b300 42%,#9a5f00 52%,#e9a800 64%,#fff2a8 88%,#c98a00 100%);
+  --row:88px;--rows:3;
+  --emoji:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;border:0;cursor:pointer;color:inherit}
+button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+button:disabled{cursor:default;filter:saturate(.6) brightness(.8)}
+body{font-family:'Orbitron',sans-serif;color:#fff;min-height:100vh;overflow-x:hidden;
+ background:
+  repeating-conic-gradient(from 0deg at 50% 38%,#ffcc3312 0 6deg,#0000 6deg 12deg),
+  radial-gradient(ellipse at 50% 38%,#7a0a1c 0%,#3a0010 40%,#120006 75%,#050002 100%) fixed}
+
+/* header */
+.top{position:relative;text-align:center;padding:22px 0 4px}
+.logo{font-family:'Cinzel Decorative';font-weight:900;font-size:92px;line-height:1;letter-spacing:2px;position:relative;display:inline-block}
+.logo .back{position:absolute;inset:0;color:#5a2a00;text-shadow:0 2px 0 #7a3c00,0 4px 0 #6a3300,0 6px 0 #4a2200,0 8px 0 #3a1a00,0 12px 18px #000,0 0 40px #ffb000aa}
+.logo .front{position:relative;background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1px #fff6c0}
+.tag{font-family:'Luckiest Guy';font-size:24px;letter-spacing:4px;margin-top:6px;text-shadow:0 2px 0 #8a0000,0 0 14px #ff3355}
+.tag em{font-style:normal;color:#ffd84a}
+
+.wrap{display:flex;gap:26px;justify-content:center;align-items:flex-start;padding:80px 20px 24px}
+
+/* side panels */
+.side{width:230px;border-radius:16px;padding:3px;background:var(--gold);box-shadow:0 10px 30px #000a,0 0 30px #ffb00033}
+.side .in{border-radius:13px;padding:14px 12px;background:linear-gradient(180deg,#2a0610,#120207);position:relative;overflow:hidden}
+.side h2{font-family:'Luckiest Guy';font-weight:400;font-size:21px;letter-spacing:1.5px;text-align:center;margin-bottom:8px;background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.side h2.gap{margin-top:16px}
+.jp{font-weight:900;font-size:30px;text-align:center;padding:8px 0;border-radius:8px;background:#000;border:2px solid #b8860b;color:#ffe680;text-shadow:0 0 10px #ffb000,0 0 20px #ff8000;box-shadow:inset 0 0 18px #ff800044}
+.jp.small{font-size:26px}
+.jp small{display:block;font-size:10px;letter-spacing:3px;color:#d9a640;text-shadow:none;font-weight:700}
+.row{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #ffcc6622;font:11px Verdana,'DejaVu Sans',sans-serif;color:#f0d9b0}
+.row b{color:#ffd84a;font-family:'Orbitron';font-size:11px}
+.row .e{font-family:var(--emoji);font-size:18px}
+
+/* machine */
+.machine{position:relative;width:880px;max-width:100%;padding:16px;border-radius:56px 56px 26px 26px;background:var(--gold);
+ box-shadow:0 0 0 3px #5a3200,0 0 0 7px #ffe27a,0 0 0 10px #7a4a00,0 30px 60px #000,0 0 120px #ffb00055}
+.body{border-radius:44px 44px 16px 16px;padding:22px 24px;position:relative;overflow:hidden;
+ background:radial-gradient(ellipse at 50% 0%,#e8213a 0%,#a00018 35%,#5a000c 80%,#3a0008 100%);box-shadow:inset 0 0 0 3px #3a1a00,inset 0 6px 30px #000a}
+.body:before{content:'';position:absolute;left:30px;right:30px;top:6px;height:110px;border-radius:40px 40px 50% 50%;background:linear-gradient(#ffffff38,#fff0);pointer-events:none}
+.crown{position:absolute;left:50%;top:-58px;transform:translateX(-50%);width:420px;height:70px;border-radius:200px 200px 0 0;background:var(--gold);box-shadow:0 0 0 3px #5a3200,0 -4px 30px #ffb00088;display:flex;align-items:center;justify-content:center;gap:16px}
+.gem{width:26px;height:26px;transform:rotate(45deg);border-radius:4px;background:radial-gradient(circle at 30% 30%,#fff,#ff2a4a 35%,#7a0010);box-shadow:0 0 0 2px #5a3200,0 0 14px #ff2a4a}
+.gem.b{background:radial-gradient(circle at 30% 30%,#fff,#2ad4ff 35%,#004a7a);box-shadow:0 0 0 2px #5a3200,0 0 14px #2ad4ff}
+.gem.g{width:36px;height:36px;background:radial-gradient(circle at 30% 30%,#fff,#ffe680 35%,#b07000)}
+.bulbs{display:flex;justify-content:space-between;padding:0 4px;margin-bottom:14px;position:relative}
+.bulbs i{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 20%,#fff6b0 30%,#ffc400 60%,#a06000);box-shadow:0 0 6px #fff6b0,0 0 16px #ffc400;animation:chase 1.6s linear infinite;animation-delay:calc(var(--n) * -50ms)}
+.bulbs i:nth-child(3n){background:radial-gradient(circle at 35% 30%,#fff 0 20%,#ffd0d8 30%,#ff3355 60%,#800);box-shadow:0 0 6px #fff,0 0 14px #ff3355}
+.machine.busy .bulbs i{animation-duration:.45s}
+@keyframes chase{0%,100%{filter:brightness(.5)}50%{filter:brightness(1.35)}}
+.sign{text-align:center;margin:0 70px 18px;padding:3px;border-radius:14px;background:var(--gold);box-shadow:0 6px 16px #000a;position:relative}
+.sign div{border-radius:11px;padding:8px;background:linear-gradient(#1a0006,#000);font-family:'Luckiest Guy';font-size:40px;letter-spacing:3px}
+.sign span{background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.frame{padding:5px;border-radius:14px;background:var(--gold);box-shadow:0 8px 20px #000c;position:relative}
+.reels{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;background:linear-gradient(#0a0003,#1a0008);padding:12px;border-radius:10px;position:relative;box-shadow:inset 0 0 20px #000}
+.plate{font-family:'Luckiest Guy';font-size:16px;letter-spacing:1.5px;text-align:center;color:#3a1a00;background:var(--gold);margin-bottom:6px;border-radius:6px;padding:3px 0 1px;box-shadow:0 2px 0 #3a1a00;text-shadow:0 1px 0 #fff8}
+.reel{height:calc(var(--row) * var(--rows));position:relative;border-radius:8px;overflow:hidden;color:#2a1000;
+ background:linear-gradient(180deg,#5a4a3a 0%,#f2e6cc 18%,#fffaf0 50%,#f2e6cc 82%,#5a4a3a 100%);box-shadow:inset 0 0 0 2px #b8860b,inset 0 0 14px #0008}
+.reel:after{content:'';position:absolute;left:6%;width:40%;top:0;bottom:0;background:linear-gradient(90deg,#fff0,#ffffff55 40%,#fff0);transform:skewX(-8deg);pointer-events:none}
+.strip{will-change:transform}
+.reel.moving .strip{filter:blur(2.5px)}
+.sym{height:var(--row);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-family:'Luckiest Guy';font-size:15px;letter-spacing:.5px;line-height:1.05;padding:0 4px}
+.sym .e{font-family:var(--emoji);font-size:46px;line-height:1.1;margin-bottom:2px;filter:drop-shadow(0 4px 3px #0006)}
+.sym.dim{opacity:.4}
+.payline{position:absolute;left:4px;right:4px;top:50%;margin-top:11px;height:4px;border-radius:2px;background:linear-gradient(90deg,#ffe680,#fff,#ffe680);box-shadow:0 0 10px #ffd84a,0 0 20px #ffb000;pointer-events:none;opacity:.85}
+.hold{display:block;width:100%;margin-top:8px;font-family:'Luckiest Guy';font-size:16px;letter-spacing:2px;padding:8px 0 5px;text-align:center;border-radius:20px;color:#fff;
+ background:linear-gradient(180deg,#5a5a6a 0%,#2a2a36 50%,#16161e 51%,#3a3a4a 100%);border:2px solid #b8860b;box-shadow:0 3px 0 #000,inset 0 1px 0 #fff4}
+.hold[aria-pressed=true]{color:#3a1a00;background:linear-gradient(180deg,#fffbe0 0%,#ffd84a 48%,#e09a00 52%,#ffe27a 100%);box-shadow:0 0 18px #ffd84a,0 3px 0 #5a3200}
+.msg{min-height:20px;margin-top:10px;text-align:center;font-family:'Luckiest Guy';letter-spacing:3px;color:#ffe680;text-shadow:0 0 10px #ffb000}
+.controls{display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:14px}
+.led{padding:3px;border-radius:10px;background:var(--gold)}
+.led div{border-radius:8px;background:#000;padding:4px 14px;text-align:center;box-shadow:inset 0 0 14px #ff800033}
+.led small{display:block;font-size:10px;font-weight:700;letter-spacing:3px;color:#d9a640}
+.led b{font-size:30px;font-weight:900;color:#ffe680;text-shadow:0 0 10px #ffb000}
+.spinbtn{position:relative;font-family:'Luckiest Guy';font-size:50px;letter-spacing:4px;color:#fff;padding:14px 60px 8px;border-radius:60px;overflow:hidden;
+ background:linear-gradient(180deg,#ff8a9a 0%,#ff2a4a 45%,#b0001c 52%,#e0102e 100%);
+ box-shadow:0 0 0 4px #ffe27a,0 0 0 7px #7a4a00,0 8px 0 7px #3a1a00,0 0 40px #ff2a4a99;text-shadow:0 3px 0 #6a0010}
+.spinbtn:before{content:'';position:absolute;left:8%;right:8%;top:3px;height:45%;border-radius:40px;background:linear-gradient(#ffffffaa,#fff0)}
+.spinbtn:active:not(:disabled){transform:translateY(4px)}
+.maxbet{font-family:'Luckiest Guy';font-size:18px;letter-spacing:1px;padding:12px 18px 8px;border-radius:14px;background:var(--gold);color:#3a1a00;box-shadow:0 0 0 3px #7a4a00,0 5px 0 3px #3a1a00;text-align:center;line-height:1.1}
+.lever{position:absolute;right:-84px;top:180px;width:64px;height:310px;background:none}
+.lever .rod,.lever .ball,.lever .base{position:absolute;display:block}
+.lever .rod{left:25px;top:44px;width:14px;height:200px;background:linear-gradient(90deg,#8a8a8a,#fff,#9a9a9a,#555);border-radius:7px;transition:top .15s,height .15s}
+.lever .ball{left:3px;top:0;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#fff 0 8%,#ff6a80 18%,#e0102e 45%,#5a0010);box-shadow:0 0 22px #ff2a4a,0 6px 10px #000;transition:top .15s}
+.lever .base{left:0;top:236px;width:64px;height:76px;border-radius:14px;background:var(--gold);box-shadow:0 0 0 3px #5a3200}
+.lever.pulled .ball{top:130px}
+.lever.pulled .rod{top:170px;height:70px}
+
+.foot{text-align:center;font:11px Verdana,'DejaVu Sans',sans-serif;color:#c9a46a;padding:10px 12px 20px;letter-spacing:1px}
+.foot b{color:#ffd84a}
+.link{background:none;color:#ffd84a;text-decoration:underline;font:inherit;letter-spacing:1px;padding:2px 4px}
+
+/* jackpot dialog */
+dialog{border:0;background:none;color:inherit;margin:auto;overflow:visible;max-width:100vw}
+dialog::backdrop{background:radial-gradient(circle,#0003 20%,#000d 75%)}
+.burst{position:absolute;left:50%;top:50%;width:1500px;height:1500px;margin:-750px 0 0 -750px;border-radius:50%;background:repeating-conic-gradient(#ffd84a66 0 7deg,#0000 7deg 15deg);-webkit-mask:radial-gradient(circle,#000 10%,#0000 60%);mask:radial-gradient(circle,#000 10%,#0000 60%);pointer-events:none;animation:spinburst 30s linear infinite}
+@keyframes spinburst{to{transform:rotate(360deg)}}
+.card{position:relative;width:540px;max-width:calc(100vw - 24px);padding:5px;border-radius:24px;background:var(--gold);box-shadow:0 0 0 3px #5a3200,0 0 80px #ffd84a,0 30px 60px #000;animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.card .in{border-radius:20px;padding:56px 26px 22px;text-align:center;background:radial-gradient(ellipse at 50% 0%,#8a0a1e,#3a0010 60%,#1a0006)}
+.ribbon{position:absolute;left:50%;top:-62px;transform:translateX(-50%) rotate(-3deg);white-space:nowrap;font-family:'Cinzel Decorative';font-weight:900;font-size:86px;line-height:1;z-index:2}
+.ribbon .back{position:absolute;inset:0;color:#5a2a00;text-shadow:0 3px 0 #7a3c00,0 6px 0 #5a2a00,0 9px 0 #3a1a00,0 14px 20px #000}
+.ribbon .front{position:relative;background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1px #fff6c0}
+.x{position:absolute;right:14px;top:14px;width:32px;height:32px;border-radius:50%;background:var(--gold);color:#3a1a00;font-weight:900;z-index:3}
+.card .title{font-family:'Luckiest Guy';font-size:20px;letter-spacing:4px;color:#ffd84a}
+.card .name{font-family:'Luckiest Guy';font-weight:400;font-size:32px;margin:4px 0 14px;text-shadow:0 3px 0 #6a0010,0 0 18px #ff2a4a}
+.card table{width:100%;border-collapse:collapse}
+.card td,.card th{padding:7px 4px;border-bottom:1px solid #ffcc6633;font-weight:400}
+.card th{font-weight:700;font-size:10px;letter-spacing:2px;color:#d9a640;text-align:left;width:86px}
+.card td.e{font-family:var(--emoji);font-size:26px;width:44px}
+.card td.n{font-family:'Luckiest Guy';font-size:22px;letter-spacing:1px;text-align:left}
+.card .btns{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:20px}
+.card .btns .spinbtn{font-size:26px;padding:12px 30px 6px}
+.coin{position:absolute;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,#ffd84a 30%,#c98a00 70%,#7a4a00);box-shadow:inset 0 0 0 3px #ffe27a,inset 0 0 0 5px #b07000,0 4px 8px #0008;z-index:4;animation:bob 1.6s ease-in-out infinite alternate}
+.coin:after{content:'$';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Luckiest Guy';font-size:calc(var(--s) * .55);color:#8a5200;text-shadow:0 1px 0 #fff8}
+@keyframes bob{to{transform:translateY(-14px) rotate(14deg)}}
+
+/* lever only fits beside the machine on wide screens */
+@media (max-width:1500px){.lever{display:none}}
+/* narrow desktop / tablet: drop left panel, winners go under the machine */
+@media (max-width:1240px){
+  .wrap{flex-direction:column;align-items:center}
+  .side.left{display:none}
+  .side.right{width:min(880px,100%)}
+}
+/* phone: 3x2 reel grid, one visible row per reel */
+@media (max-width:760px){
+  :root{--row:128px;--rows:1}
+  .logo{font-size:44px}
+  .tag{font-size:15px;letter-spacing:2px}
+  .wrap{padding:44px 12px 12px;gap:18px}
+  .machine{padding:8px;border-radius:30px 30px 16px 16px}
+  .body{padding:14px 10px;border-radius:24px 24px 10px 10px}
+  .crown{width:220px;height:44px;top:-38px;gap:10px}
+  .gem{width:16px;height:16px}.gem.g{width:22px;height:22px}
+  .sign{margin:0 4px 12px}.sign div{font-size:22px;letter-spacing:1px}
+  .reels{grid-template-columns:repeat(3,1fr);row-gap:12px}
+  .sym .e{font-size:36px}.sym{font-size:13px}
+  .payline{display:none}
+  .controls{flex-wrap:wrap;justify-content:center}
+  .spinbtn{order:-1;width:100%;text-align:center;font-size:40px;margin:6px 4px 10px}
+  .led b{font-size:22px}
+  .bulbs i{width:9px;height:9px}
+  .ribbon{font-size:46px;top:-34px}
+  .card .in{padding:36px 14px 18px}
+  .card .name{font-size:24px}
+  .card .btns .spinbtn{width:auto}
+}
+@media (max-width:420px){.sign .num{display:none}}
+@media (prefers-reduced-motion:reduce){
+  .bulbs i,.burst,.coin,.card{animation:none}
+  .reel.moving .strip{filter:none}
+}
