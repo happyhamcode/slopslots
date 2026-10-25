@@ -303,7 +303,7 @@ const setBusy = (b) => {
   document.querySelectorAll('.plate, [data-table], #allergy-btn').forEach((x) => { x.disabled = b; });
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const JACKPOT_DELAY_MS = 1000;
+const JACKPOT_DELAY_MS = 500;
 
 // HOLD buttons double as STOP buttons while the reels run.
 function paintHold(k, mode) {
