@@ -58,7 +58,7 @@ npx serve .        # then open http://localhost:3000
 node --test        # unit tests (pure logic, no browser needed)
 ```
 
-Plain `HTML + CSS + JS`. 5 files. Ur grandma could host it.
+Plain `HTML + CSS + JS`. 4 files that matter. Ur grandma could host it.
 
 ## 🚀 DEPLOY
 
