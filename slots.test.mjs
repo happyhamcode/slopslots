@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { POOLS, TABLES, ALLERGENS, tableById, poolsFor, emptyReels, ringOf, spin, pickOther, bowlName, recipeText } from './slots.js';
+import { POOLS, TABLES, ALLERGENS, tableById, poolsFor, emptyReels, ringOf, spin, pickOther, bowlName, recipeText, shareLinks, shareText } from './slots.js';
 
 const seeded = (s) => () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
 const none = Array(6).fill(false);
@@ -77,4 +77,35 @@ test('table + allergens can leave a reel empty, and short pools still scroll', (
   assert.equal(ringOf([1]).length, 3);
   assert.ok(ringOf([1, 2]).length >= 3);
   assert.equal(pickOther([{ n: 'a' }], { n: 'a' }, () => 0).n, 'a');
+});
+
+test('no icon needs a new emoji font (Unicode 13+ shows as an empty box on older devices)', () => {
+  for (const it of POOLS.flat()) {
+    for (const ch of it.e) {
+      const cp = ch.codePointAt(0);
+      assert.ok(cp < 0x1faa0 || cp > 0x1faff, `${it.n} uses ${ch}`);
+    }
+    assert.ok(it.e.length > 0, it.n);
+  }
+});
+
+test('blocked ingredients never appear, on any table', () => {
+  const blocked = ['Bell Pepper', 'Steak', 'Pesto'];
+  for (const t of TABLES) assert.ok(poolsFor(t, [], blocked).flat().every((it) => !blocked.includes(it.n)), t.id);
+});
+
+test('blocking a whole reel is detected', () => {
+  const all = POOLS[2].map((it) => it.n);
+  assert.deepEqual(emptyReels(poolsFor(tableById('open'), [], all)), [2]);
+});
+
+test('share links carry the text and url, encoded', () => {
+  const links = shareLinks('a & b "c"', 'https://x.test/?q=1');
+  assert.ok(links.length >= 5);
+  for (const l of links) {
+    assert.ok(l.href.startsWith('https://'), l.id);
+    assert.ok(!l.href.includes(' ') && !l.href.includes('"'), l.id);
+    assert.ok(l.href.includes(encodeURIComponent('a & b')), l.id);
+  }
+  assert.equal(shareText(spin(POOLS, none, null, seeded(7)), 'X').split(' + ').length, 6);
 });

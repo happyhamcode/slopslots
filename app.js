@@ -1,6 +1,6 @@
 import {
-  TABLES, ALLERGENS, LABELS, tableById, poolsFor, emptyReels, ringOf,
-  spin, bowlName, recipeText,
+  TABLES, POOLS, ALLERGENS, LABELS, tableById, poolsFor, emptyReels, ringOf,
+  spin, bowlName, recipeText, shareLinks, shareText, SHARE_URL,
 } from './slots.js';
 
 const $ = (s) => document.querySelector(s);
@@ -21,8 +21,9 @@ const FAKE = [
 /* ---------- state ---------- */
 let table = tableById(store.get('table', 'open'));
 let avoid = store.get('avoid', []).filter((a) => ALLERGENS.some((x) => x.id === a));
-let pools = poolsFor(table, avoid);
-if (emptyReels(pools).length) { table = TABLES[0]; avoid = []; pools = poolsFor(table, avoid); }
+let blocked = store.get('blocked', []).filter((n) => POOLS.some((p) => p.some((it) => it.n === n)));
+let pools = poolsFor(table, avoid, blocked);
+if (emptyReels(pools).length) { table = TABLES[0]; avoid = []; blocked = []; pools = poolsFor(table, avoid, blocked); }
 let rings = pools.map(ringOf);
 
 const randomItem = (k) => pools[k][Math.floor(rand() * pools[k].length)];
@@ -210,11 +211,14 @@ for (const t of TABLES) {
   row.onclick = () => setTable(t.id);
   $('#tables-list').append(row);
 }
-$('#tables').append(allergyBtn);
+const ingsBtn = Object.assign(document.createElement('button'), { className: 'chip warn', type: 'button', id: 'ings-btn' });
+ingsBtn.onclick = () => { renderIngs(); $('#ings').showModal(); };
+$('#tables').append(ingsBtn, allergyBtn);
 
 function renderTables() {
   document.querySelectorAll('[data-table]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.table === table.id)));
   allergyBtn.textContent = `⚠ ALLERGIES${avoid.length ? ` (${avoid.length})` : ''}`;
+  ingsBtn.textContent = `🥄 INGREDIENTS${blocked.length ? ` (-${blocked.length})` : ''}`;
 }
 
 // Pools changed (table or allergies): drop locks that no longer fit, re-roll reels showing banned items.
@@ -234,9 +238,9 @@ function rebuild() {
 function setTable(id) {
   if (spinning) return;
   const t = tableById(id);
-  const np = poolsFor(t, avoid);
+  const np = poolsFor(t, avoid, blocked);
   const bad = emptyReels(np);
-  if (bad.length) { msg(`${t.name} HAS NO ${LABELS[bad[0]]} FOR YOUR ALLERGIES`); return; }
+  if (bad.length) { msg(`${t.name} HAS NO ${LABELS[bad[0]]} FOR YOUR AVOIDS`); return; }
   table = t; pools = np;
   store.set('table', t.id);
   rebuild();
@@ -248,7 +252,7 @@ for (const a of ALLERGENS) {
   const cb = Object.assign(document.createElement('input'), { type: 'checkbox', value: a.id, checked: avoid.includes(a.id) });
   cb.onchange = () => {
     const wanted = [...allergyOpts.querySelectorAll('input:checked')].map((c) => c.value);
-    const np = poolsFor(table, wanted);
+    const np = poolsFor(table, wanted, blocked);
     const bad = emptyReels(np);
     if (bad.length) {
       cb.checked = !cb.checked;
@@ -267,11 +271,48 @@ for (const a of ALLERGENS) {
 $('#allergy-clear').onclick = () => {
   allergyOpts.querySelectorAll('input').forEach((c) => { c.checked = false; });
   $('#allergy-err').textContent = '';
-  avoid = []; pools = poolsFor(table, avoid);
+  avoid = []; pools = poolsFor(table, avoid, blocked);
   store.set('avoid', avoid);
   rebuild();
 };
 $('#allergy-ok').onclick = () => $('#allergy').close();
+
+/* ---------- ingredient picker (per-reel blacklist) ---------- */
+let ingReel = 0;
+const ingsErr = (t) => { $('#ings-err').textContent = t; };
+
+// Apply a new blocked list unless it would empty a reel. Returns whether it applied.
+function applyBlocked(next) {
+  const np = poolsFor(table, avoid, next);
+  const bad = emptyReels(np);
+  if (bad.length) { ingsErr(`NEED AT LEAST ONE ${LABELS[bad[0]]} AT ${table.name}.`); return false; }
+  ingsErr('');
+  blocked = next; pools = np;
+  store.set('blocked', blocked);
+  rebuild();
+  return true;
+}
+
+function renderIngs() {
+  const opts = poolsFor(table, avoid)[ingReel];
+  $('#ings-tabs').replaceChildren(...LABELS.map((label, k) => {
+    const b = Object.assign(document.createElement('button'), { className: 'opt tab', type: 'button', textContent: label });
+    b.setAttribute('aria-pressed', String(k === ingReel));
+    b.onclick = () => { ingReel = k; ingsErr(''); renderIngs(); };
+    return b;
+  }));
+  $('#ings-opts').replaceChildren(...opts.map((it) => {
+    const cb = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !blocked.includes(it.n) });
+    cb.onchange = () => {
+      if (!applyBlocked(cb.checked ? blocked.filter((n) => n !== it.n) : [...blocked, it.n])) cb.checked = !cb.checked;
+    };
+    const label = Object.assign(document.createElement('label'), { className: 'chk' });
+    label.append(cb, ' ', Object.assign(document.createElement('span'), { className: 'e', textContent: it.e }), ` ${it.n}`);
+    return label;
+  }));
+}
+$('#ings-reset').onclick = () => { applyBlocked([]); renderIngs(); };
+$('#ings-ok').onclick = () => $('#ings').close();
 
 function setLock(k, item) {
   if (item) { held[k] = true; current[k] = item; rest[k] = neighbors(k, item); paint(k); } else held[k] = false;
@@ -300,7 +341,7 @@ const setBusy = (b) => {
   spinning = b;
   $('#machine').classList.toggle('busy', b);
   for (const id of ['#spin', '#max', '#again']) $(id).disabled = b;
-  document.querySelectorAll('.plate, [data-table], #allergy-btn').forEach((x) => { x.disabled = b; });
+  document.querySelectorAll('.plate, [data-table], #allergy-btn, #ings-btn').forEach((x) => { x.disabled = b; });
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const JACKPOT_DELAY_MS = 500;
@@ -407,6 +448,31 @@ $('#copy').onclick = async () => {
   catch { btn.textContent = 'NOPE'; }
   setTimeout(() => { btn.innerHTML = old; }, 1500);
 };
+/* ---------- share ---------- */
+$('#share-btn').onclick = () => {
+  const text = shareText(current, $('#win-name').textContent.replace(/"/g, ''));
+  const note = (t) => { $('#share-msg').textContent = t; };
+  note('');
+  const links = shareLinks(text).map((l) => Object.assign(document.createElement('a'), {
+    className: 'opt', href: l.href, target: '_blank', rel: 'noopener noreferrer', textContent: l.name,
+  }));
+  const discord = Object.assign(document.createElement('button'), { className: 'opt', type: 'button', textContent: 'DISCORD' });
+  discord.onclick = async () => {
+    try { await navigator.clipboard.writeText(`${text} ${SHARE_URL}`); note('COPIED! PASTE IT IN DISCORD'); }
+    catch { note('COULD NOT COPY, TRY COPY RECIPE'); }
+    open('https://discord.com/channels/@me', '_blank', 'noopener,noreferrer');
+  };
+  const extra = [discord];
+  if (navigator.share) {
+    const native = Object.assign(document.createElement('button'), { className: 'opt', type: 'button', textContent: 'MORE…' });
+    native.onclick = () => navigator.share({ text, url: SHARE_URL }).catch(() => {});
+    extra.push(native);
+  }
+  $('#share-opts').replaceChildren(...links, ...extra);
+  $('#share').showModal();
+};
+$('#share-close').onclick = () => $('#share').close();
+
 addEventListener('keydown', (e) => {
   if (e.code === 'Space' && !e.target.closest?.('button, dialog')) {
     e.preventDefault();

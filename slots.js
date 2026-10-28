@@ -6,6 +6,7 @@ export const LABELS = ['CARB', 'PROTEIN', 'VEGGIE', 'FLAVOR', 'TOPPER', 'EXTRA']
 export const ALLERGENS = [
   { id: 'g', name: 'GLUTEN' }, { id: 'd', name: 'DAIRY' }, { id: 'e', name: 'EGG' }, { id: 'f', name: 'FISH' },
   { id: 's', name: 'SHELLFISH' }, { id: 'y', name: 'SOY' }, { id: 'm', name: 'SESAME' }, { id: 'r', name: 'PORK' },
+  { id: 'p', name: 'PEANUTS' }, { id: 'n', name: 'TREE NUTS' },
 ];
 
 // t = diet tags: v vegan, k keto-friendly, p premium, x exclusive to the High Roller table.
@@ -18,19 +19,19 @@ export const POOLS = [
    i('🥒', 'Zucchini Noodles', 'vk'), i('🥬', 'Lettuce Wrap', 'vk'), i('🍄', 'Truffle Risotto', 'x', 'd')],
   [i('🥩', 'Ground Beef', 'k'), i('🦃', 'Ground Turkey', 'k'), i('🌭', 'Chorizo', 'k', 'r'), i('🍗', 'Grilled Chicken', 'k'),
    i('🥩', 'Steak', 'kp'), i('🐟', 'Salmon', 'kp', 'f'), i('🦐', 'Shrimp', 'kp', 's'), i('🧈', 'Tofu', 'vk', 'y'),
-   i('🌮', 'Birria', 'kp'), i('🌱', 'Tempeh', 'vk', 'y'), i('🫘', 'Chickpeas', 'v'), i('🍲', 'Lentils', 'v'),
+   i('🌮', 'Birria', 'kp'), i('🌱', 'Tempeh', 'vk', 'y'), i('🧆', 'Chickpeas', 'v'), i('🍲', 'Lentils', 'v'),
    i('🥩', 'Wagyu', 'kpx'), i('🦞', 'Lobster', 'kpx', 's')],
-  [i('🌽', 'Roast Corn', 'v'), i('🥦', 'Broccoli', 'vk'), i('🫑', 'Bell Pepper', 'vk'), i('🫘', 'Black Beans', 'v'),
-   i('🥒', 'Cucumber', 'vk'), i('🥬', 'Spinach', 'vk'), i('🥗', 'Roast Zucchini', 'vk'), i('🫛', 'Edamame', 'vk', 'y')],
+  [i('🌽', 'Roast Corn', 'v'), i('🥦', 'Broccoli', 'vk'), i('🌶️', 'Bell Pepper', 'vk'), i('🌰', 'Black Beans', 'v'),
+   i('🥒', 'Cucumber', 'vk'), i('🥬', 'Spinach', 'vk'), i('🥗', 'Roast Zucchini', 'vk'), i('🟢', 'Edamame', 'vk', 'y'), i('🍄', 'Mushrooms', 'vk')],
   [i('🍯', 'Hot Honey', 'p'), i('🌶️', 'Gochujang', 'v', 'yg'), i('🧄', 'Garlic Butter', 'kp', 'd'), i('🍶', 'Teriyaki', 'v', 'yg'),
    i('🌶️', 'Chipotle Mayo', 'k', 'e'), i('🧂', 'Tajín', 'vk'), i('🥯', 'Everything Bagel', 'vk', 'gm'), i('🔥', 'Buffalo', 'k', 'd'),
-   i('🍄', 'Truffle Aioli', 'kpx', 'e')],
+   i('🍄', 'Truffle Aioli', 'kpx', 'e'), i('🥜', 'Peanut Sauce', 'v', 'py'), i('🌿', 'Pesto', 'k', 'nd')],
   [i('🍳', 'Fried Egg', 'k', 'e'), i('🥑', 'Avocado', 'vkp'), i('🍅', 'Salsa', 'vk'), i('🧀', 'Cotija', 'k', 'd'),
    i('🥚', 'Jammy Egg', 'kp', 'e'), i('🥑', 'Guac', 'vk'), i('🧀', 'Feta', 'k', 'd'), i('🥬', 'Kimchi', 'k', 'fs'),
    i('🧀', 'Burrata', 'kpx', 'd'), i('⚫', 'Caviar', 'kpx', 'f')],
   [i('🥒', 'Pickles', 'vk'), i('🍅', 'Pico', 'vk'), i('🧅', 'Crispy Onion', 'v', 'g'), i('🧅', 'Pickled Onion', 'vk'),
    i('⚪', 'Sesame Seeds', 'vk', 'm'), i('🌶️', 'Sriracha', 'vk'), i('🥫', 'Yum Yum Sauce', 'k', 'e'),
-   i('🧀', 'Hot Cheetos Dust', '', 'd'), i('✨', 'Gold Flakes', 'x')],
+   i('🧀', 'Hot Cheetos Dust', '', 'd'), i('🥜', 'Crushed Peanuts', 'vk', 'p'), i('✨', 'Gold Flakes', 'x')],
 ];
 
 // `need` maps a reel index to the tag its items must carry; `luxe` unlocks x-tagged items.
@@ -43,11 +44,12 @@ export const TABLES = [
 
 export const tableById = (id) => TABLES.find((t) => t.id === id) ?? TABLES[0];
 
-// Pools for a table, minus anything containing an allergen id listed in `avoid`.
-export const poolsFor = (table, avoid = []) =>
+// Pools for a table, minus anything containing an allergen id in `avoid` or named in `blocked`.
+export const poolsFor = (table, avoid = [], blocked = []) =>
   POOLS.map((pool, k) => pool.filter((it) =>
     (table.luxe || !it.t.includes('x')) &&
     (!table.need[k] || it.t.includes(table.need[k])) &&
+    !blocked.includes(it.n) &&
     !avoid.some((a) => it.a.includes(a))));
 
 // Reel indexes with nothing left to spin.
@@ -86,4 +88,23 @@ export function recipeText(result, name, table = TABLES[0]) {
     ...result.map((it, k) => `${LABELS[k]}: ${it.n}`),
     'slopslots',
   ].join('\n');
+}
+
+export const SHARE_URL = 'https://slopslots.happyham.games';
+
+export const shareText = (result, name) =>
+  `I won dinner at SLOP SLOTS 🎰 "${name}": ${result.map((it) => it.n).join(' + ')}`;
+
+// Intent URLs for the big networks. Discord has no share URL, so the app copies the text instead.
+export function shareLinks(text, url = SHARE_URL) {
+  const t = encodeURIComponent(text);
+  const u = encodeURIComponent(url);
+  return [
+    { id: 'x', name: 'X', href: `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
+    { id: 'facebook', name: 'FACEBOOK', href: `https://www.facebook.com/sharer/sharer.php?u=${u}&quote=${t}` },
+    { id: 'reddit', name: 'REDDIT', href: `https://www.reddit.com/submit?url=${u}&title=${t}` },
+    { id: 'whatsapp', name: 'WHATSAPP', href: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}` },
+    { id: 'telegram', name: 'TELEGRAM', href: `https://t.me/share/url?url=${u}&text=${t}` },
+    { id: 'bluesky', name: 'BLUESKY', href: `https://bsky.app/intent/compose?text=${encodeURIComponent(`${text} ${url}`)}` },
+  ];
 }

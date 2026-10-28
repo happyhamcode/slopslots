@@ -65,6 +65,7 @@
       <div class="btns">
         <button class="spinbtn" id="again" type="button">SPIN AGAIN</button>
         <button class="maxbet" id="copy" type="button">COPY<br>RECIPE</button>
+        <button class="maxbet" id="share-btn" type="button">SHARE<br>WIN</button>
       </div>
     </div>
     <div id="coins" aria-hidden="true"></div>
@@ -78,6 +79,34 @@
       <p class="hint">PICK ONE TO LOCK THE REEL ON IT</p>
       <div class="opts" id="picker-opts"></div>
       <div class="btns"><button class="maxbet" id="picker-close" type="button">CLOSE</button></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="share" aria-labelledby="share-title">
+  <div class="card plain">
+    <div class="in">
+      <div class="title" id="share-title">SHARE YOUR WIN</div>
+      <p class="hint">BRAG ABOUT YOUR SLOP</p>
+      <div class="opts shares" id="share-opts"></div>
+      <p class="err" id="share-msg" role="status" aria-live="polite"></p>
+      <div class="btns"><button class="maxbet" id="share-close" type="button">CLOSE</button></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="ings" aria-labelledby="ings-title">
+  <div class="card plain">
+    <div class="in">
+      <div class="title" id="ings-title">🥄 PICK YOUR INGREDIENTS</div>
+      <p class="hint">UNTICK ANYTHING YOU NEVER WANT TO SEE</p>
+      <div class="opts tabs" id="ings-tabs" role="group" aria-label="Reel"></div>
+      <div class="opts checks" id="ings-opts"></div>
+      <p class="err" id="ings-err" role="alert"></p>
+      <div class="btns">
+        <button class="maxbet" id="ings-reset" type="button">ALL ON</button>
+        <button class="maxbet" id="ings-ok" type="button">DONE</button>
+      </div>
     </div>
   </div>
 </dialog>
