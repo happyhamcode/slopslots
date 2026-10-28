@@ -1,15 +1,27 @@
 import {
   TABLES, POOLS, ALLERGENS, LABELS, tableById, poolsFor, emptyReels, ringOf,
   spin, bowlName, recipeText, shareLinks, shareText, SHARE_URL,
+  BASE_POOLS, TAGS, EMPTY_CONFIG, applyConfig, cleanConfig, cleanSettings,
 } from './slots.js';
 
 const $ = (s) => document.querySelector(s);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rand = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+// Public id of the Discord application. Empty = login hidden. Register this site's origin + "/" as its redirect.
+const DISCORD_CLIENT_ID = '';
+
+let onSet = () => {};
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } onSet(k); },
 };
+
+/* ---------- owner config: extra ingredients, hidden ones, custom tables ---------- */
+let config = EMPTY_CONFIG;
+try {
+  const r = await fetch('/api/config', { signal: AbortSignal.timeout(2000) });
+  if (r.ok) { config = cleanConfig(await r.json()); applyConfig(config); }
+} catch { /* built-ins only: the site never depends on the API */ }
 
 const START_CREDITS = 20;
 const ICONS = ['👑', '💎', '🎰', '🔥'];
@@ -21,7 +33,8 @@ const FAKE = [
 /* ---------- state ---------- */
 let table = tableById(store.get('table', 'open'));
 let avoid = store.get('avoid', []).filter((a) => ALLERGENS.some((x) => x.id === a));
-let blocked = store.get('blocked', []).filter((n) => POOLS.some((p) => p.some((it) => it.n === n)));
+const known = (n) => POOLS.some((p) => p.some((it) => it.n === n));
+let blocked = store.get('blocked', []).filter(known);
 let pools = poolsFor(table, avoid, blocked);
 if (emptyReels(pools).length) { table = TABLES[0]; avoid = []; blocked = []; pools = poolsFor(table, avoid, blocked); }
 let rings = pools.map(ringOf);
@@ -429,6 +442,156 @@ function showWin(name) {
   $('#again').focus();
 }
 
+/* ---------- discord login, synced settings, admin ---------- */
+const SYNCED = ['table', 'avoid', 'blocked'];
+let session = store.get('session', null); // { token, exp }
+let me = null; // { name, admin }
+let pulling = false;
+let pushTimer;
+
+const api = async (path, method = 'GET', body) => {
+  const r = await fetch(`/api/${path}`, {
+    method, body: body && JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
+  });
+  if (!r.ok) throw Object.assign(new Error((await r.json().catch(() => ({}))).error ?? 'request failed'), { status: r.status });
+  return r.json();
+};
+
+function takeLoginRedirect() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (!h.get('access_token')) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!h.get('state') || h.get('state') !== store.get('oauth', null)) return;
+  store.set('oauth', null);
+  session = { token: h.get('access_token'), exp: Date.now() + Number(h.get('expires_in') || 0) * 1000 };
+  store.set('session', session);
+}
+
+function renderAcct() {
+  $('#acct').hidden = !DISCORD_CLIENT_ID;
+  $('#who').textContent = me ? `HI ${me.name.toUpperCase()}` : '';
+  $('#admin-btn').hidden = !me?.admin;
+  $('#login').textContent = me ? 'LOG OUT' : 'LOGIN WITH DISCORD';
+}
+
+$('#login').onclick = () => {
+  if (me) { session = null; me = null; store.set('session', null); renderAcct(); return; }
+  const state = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  store.set('oauth', state);
+  location.href = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&response_type=token&scope=identify&state=${state}&redirect_uri=${encodeURIComponent(`${location.origin}/`)}`;
+};
+
+function pushSettings() {
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => api('settings', 'PUT', { table: table.id, avoid, blocked }).catch(() => {}), 800);
+}
+onSet = (k) => { if (session && !pulling && SYNCED.includes(k)) pushSettings(); };
+
+function applyRemote(raw) {
+  const s = cleanSettings(raw);
+  const bl = s.blocked.filter(known);
+  const t = tableById(s.table);
+  const np = poolsFor(t, s.avoid, bl);
+  if (emptyReels(np).length || spinning) return;
+  pulling = true;
+  table = t; avoid = s.avoid; blocked = bl; pools = np;
+  store.set('table', t.id); store.set('avoid', avoid); store.set('blocked', blocked);
+  pulling = false;
+  allergyOpts.querySelectorAll('input').forEach((c) => { c.checked = avoid.includes(c.value); });
+  rebuild();
+}
+
+async function initAuth() {
+  if (!DISCORD_CLIENT_ID) return;
+  takeLoginRedirect();
+  renderAcct();
+  if (!session || session.exp < Date.now()) { session = null; return; }
+  try {
+    me = await api('me');
+    const remote = await api('settings');
+    if (remote) applyRemote(remote); else pushSettings();
+  } catch (e) {
+    if (e.status === 401) { session = null; me = null; store.set('session', null); }
+  }
+  renderAcct();
+}
+
+/* admin: edits a draft of the owner config; the server only accepts it from the owner's Discord id */
+let draft;
+let adminReel = 0;
+const adminErr = (t) => { $('#admin-err').textContent = t; };
+const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
+const checkRow = (id, name) => { const cb = el('input', { type: 'checkbox', value: id }); return el('label', { className: 'chk' }, cb, ` ${name}`); };
+const checked = (box) => [...box.querySelectorAll('input:checked')].map((c) => c.value).join('');
+
+$('#ai-tags').append(...TAGS.map((t) => checkRow(t.id, t.name)));
+$('#ai-allergens').append(...ALLERGENS.map((a) => checkRow(a.id, a.name)));
+$('#at-need').append(...LABELS.map((label, k) => {
+  const sel = el('select', { id: `need-${k}` }, el('option', { value: '', textContent: 'ANY' }),
+    ...TAGS.filter((t) => t.id !== 'x').map((t) => el('option', { value: t.id, textContent: t.name })));
+  return el('label', { className: 'chk' }, `${label} `, sel);
+}));
+
+function renderAdmin() {
+  $('#admin-tabs').replaceChildren(...LABELS.map((label, k) => {
+    const b = el('button', { className: 'opt tab', type: 'button', textContent: label });
+    b.setAttribute('aria-pressed', String(k === adminReel));
+    b.onclick = () => { adminReel = k; renderAdmin(); };
+    return b;
+  }));
+  const custom = draft.items.filter((it) => it.r === adminReel);
+  $('#admin-items').replaceChildren(...[...BASE_POOLS[adminReel], ...custom].map((it) => {
+    const cb = el('input', { type: 'checkbox', checked: !draft.hide.includes(it.n) });
+    cb.onchange = () => { draft.hide = cb.checked ? draft.hide.filter((n) => n !== it.n) : [...draft.hide, it.n]; };
+    const label = el('label', { className: 'chk' }, cb, ' ', el('span', { className: 'e', textContent: it.e }), ` ${it.n}`);
+    if (custom.includes(it)) {
+      const x = el('button', { className: 'link', type: 'button', textContent: '✕', title: 'Remove' });
+      x.setAttribute('aria-label', `Remove ${it.n}`);
+      x.onclick = (ev) => { ev.preventDefault(); draft.items = draft.items.filter((o) => o !== it); renderAdmin(); };
+      label.append(x);
+    }
+    return label;
+  }));
+  $('#admin-tables').replaceChildren(...draft.tables.map((t) => {
+    const x = el('button', { className: 'link', type: 'button', textContent: 'REMOVE' });
+    x.onclick = () => { draft.tables = draft.tables.filter((o) => o !== t); renderAdmin(); };
+    return el('div', { className: 'row' }, el('span', { textContent: `${t.e} ${t.name}: ${t.rule}` }), x);
+  }));
+}
+
+// Validate the draft the same way the server will; roll the change back and show why if it fails.
+const tryDraft = (undo) => {
+  try { cleanConfig(draft); adminErr(''); return true; } catch (e) { undo(); adminErr(e.message.toUpperCase()); return false; }
+};
+
+$('#admin-btn').onclick = () => { draft = structuredClone(config); adminReel = 0; adminErr(''); renderAdmin(); $('#admin').showModal(); };
+$('#admin-cancel').onclick = () => $('#admin').close();
+$('#ai-add').onclick = () => {
+  const n = $('#ai-n').value.trim();
+  if (BASE_POOLS.flat().some((it) => it.n === n) || draft.items.some((it) => it.n === n)) { adminErr('NAME ALREADY EXISTS'); return; }
+  const it = { r: adminReel, e: $('#ai-e').value.trim(), n, t: checked($('#ai-tags')), a: checked($('#ai-allergens')) };
+  draft.items.push(it);
+  if (!tryDraft(() => draft.items.pop())) return;
+  $('#ai-e').value = ''; $('#ai-n').value = '';
+  $('#admin-add').querySelectorAll('input:checked').forEach((c) => { c.checked = false; });
+  renderAdmin();
+};
+$('#at-add').onclick = () => {
+  const name = $('#at-n').value.trim();
+  const need = {};
+  LABELS.forEach((_, k) => { const v = $(`#need-${k}`).value; if (v) need[k] = v; });
+  draft.tables.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), name, rule: $('#at-r').value.trim(),
+    e: $('#at-e').value.trim(), luxe: $('#at-luxe').checked, need });
+  if (!tryDraft(() => draft.tables.pop())) return;
+  for (const id of ['#at-e', '#at-n', '#at-r']) $(id).value = '';
+  renderAdmin();
+};
+$('#admin-save').onclick = async () => {
+  try { await api('config', 'PUT', cleanConfig(draft)); location.reload(); }
+  catch (e) { adminErr(e.message.toUpperCase()); }
+};
+
 /* ---------- wiring ---------- */
 $('#spin').onclick = () => (spinning ? runners.forEach((_, k) => !held[k] && stopReel(k)) : doSpin());
 $('#lever').onclick = doSpin;
@@ -487,3 +650,4 @@ renderTables();
 cols.forEach((_, k) => paintHold(k, 'hold'));
 document.fonts.ready.then(paintAll);
 paintAll();
+initAuth();

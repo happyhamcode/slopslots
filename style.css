@@ -185,7 +185,16 @@ dialog::backdrop{background:radial-gradient(circle,#0003 20%,#000d 75%)}
 a.opt{display:block;text-align:center;text-decoration:none}
 .chk .e{font-family:var(--emoji)}
 .card .btns{flex-wrap:wrap}
+.card.wide{width:720px}
+.card.wide .in{max-height:88vh;overflow:auto;text-align:left}
+.sub{font:700 11px 'Orbitron';letter-spacing:3px;color:#ffd84a;margin:16px 0 4px}
+.form{display:grid;gap:8px;margin-top:8px}
+.form input:not([type=checkbox]){font:700 14px 'Orbitron';padding:9px 10px;border:2px solid #b8860b;border-radius:10px;background:#0008;color:#fff}
+#admin-tables .row{justify-content:space-between}
+#acct{font:inherit}
 @media (max-width:760px){
   .plate{font-size:14px;letter-spacing:.5px}
   .chip{font-size:12px;padding:6px 10px 3px}
 }
+#at-need{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+#at-need .chk{overflow-wrap:normal}

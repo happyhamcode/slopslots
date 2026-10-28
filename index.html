@@ -51,7 +51,7 @@
   </div></aside>
 </main>
 
-<footer class="foot"><b>SLOP SLOTS</b> · NO REAL MONEY · ONLY REAL HUNGER · PLEASE SLOP RESPONSIBLY · <button type="button" id="mute" class="link">SOUND: ON</button></footer>
+<footer class="foot"><b>SLOP SLOTS</b> · NO REAL MONEY · ONLY REAL HUNGER · PLEASE SLOP RESPONSIBLY · <button type="button" id="mute" class="link">SOUND: ON</button><span id="acct" hidden> · <span id="who"></span> <button type="button" id="admin-btn" class="link" hidden>ADMIN</button> <button type="button" id="login" class="link">LOGIN WITH DISCORD</button></span></footer>
 
 <dialog id="win" aria-labelledby="win-name">
   <div class="burst" aria-hidden="true"></div>
@@ -106,6 +106,41 @@
       <div class="btns">
         <button class="maxbet" id="ings-reset" type="button">ALL ON</button>
         <button class="maxbet" id="ings-ok" type="button">DONE</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="admin" aria-labelledby="admin-title">
+  <div class="card plain wide">
+    <div class="in">
+      <div class="title" id="admin-title">🛠 ADMIN</div>
+      <p class="hint">EDIT THE WHEELS AND VIP TABLES. SAVE GOES LIVE FOR EVERYONE.</p>
+      <h3 class="sub">REEL</h3>
+      <div class="opts tabs" id="admin-tabs" role="group" aria-label="Reel"></div>
+      <div class="opts checks" id="admin-items"></div>
+      <h3 class="sub">ADD INGREDIENT</h3>
+      <div class="form" id="admin-add">
+        <input id="ai-e" placeholder="emoji" maxlength="8" aria-label="Emoji">
+        <input id="ai-n" placeholder="name" maxlength="30" aria-label="Name">
+        <div class="opts checks" id="ai-tags"></div>
+        <div class="opts checks" id="ai-allergens"></div>
+        <button class="maxbet" id="ai-add" type="button">ADD TO REEL</button>
+      </div>
+      <h3 class="sub">VIP TABLES</h3>
+      <div id="admin-tables"></div>
+      <div class="form" id="admin-addtable">
+        <input id="at-e" placeholder="emoji" maxlength="8" aria-label="Table emoji">
+        <input id="at-n" placeholder="table name" maxlength="20" aria-label="Table name">
+        <input id="at-r" placeholder="rule shown to players" maxlength="60" aria-label="Rule">
+        <label class="chk"><input type="checkbox" id="at-luxe"> UNLOCK VIP-ONLY ITEMS</label>
+        <div class="opts checks" id="at-need"></div>
+        <button class="maxbet" id="at-add" type="button">ADD TABLE</button>
+      </div>
+      <p class="err" id="admin-err" role="alert"></p>
+      <div class="btns">
+        <button class="maxbet" id="admin-cancel" type="button">CANCEL</button>
+        <button class="maxbet" id="admin-save" type="button">SAVE LIVE</button>
       </div>
     </div>
   </div>

@@ -108,3 +108,83 @@ export function shareLinks(text, url = SHARE_URL) {
     { id: 'bluesky', name: 'BLUESKY', href: `https://bsky.app/intent/compose?text=${encodeURIComponent(`${text} ${url}`)}` },
   ];
 }
+
+/* ---------- owner config (admin page) + synced settings ---------- */
+// Pristine built-ins, so the admin page can show what a config hides.
+export const BASE_POOLS = POOLS.map((p) => [...p]);
+const BASE_TABLE_COUNT = TABLES.length;
+export const TAGS = [{ id: 'v', name: 'VEGAN' }, { id: 'k', name: 'KETO' }, { id: 'p', name: 'PREMIUM' }, { id: 'x', name: 'VIP ONLY' }];
+export const EMPTY_CONFIG = { items: [], hide: [], tables: [] };
+
+const str = (v, max, what) => {
+  if (typeof v !== 'string' || !v.trim() || v.length > max) throw new Error(`bad ${what}`);
+  return v.trim();
+};
+const codes = (v, allowed, what) => {
+  if (typeof v !== 'string' || [...v].some((c) => !allowed.includes(c))) throw new Error(`bad ${what}`);
+  return [...new Set(v)].join('');
+};
+const list = (v, max, what) => {
+  if (!Array.isArray(v) || v.length > max) throw new Error(`bad ${what}`);
+  return v;
+};
+
+// Validates untrusted config (server and client both use this). Throws on anything odd.
+export function cleanConfig(raw) {
+  if (!raw || typeof raw !== 'object') throw new Error('bad config');
+  const tagIds = TAGS.map((t) => t.id);
+  const allergenIds = ALLERGENS.map((a) => a.id);
+  const items = list(raw.items ?? [], 60, 'items').map((it) => {
+    if (!Number.isInteger(it?.r) || it.r < 0 || it.r >= LABELS.length) throw new Error('bad reel');
+    return { r: it.r, e: str(it.e, 8, 'emoji'), n: str(it.n, 30, 'name'),
+      t: codes(it.t ?? '', tagIds, 'tags'), a: codes(it.a ?? '', allergenIds, 'allergens') };
+  });
+  const hide = list(raw.hide ?? [], 200, 'hide').map((n) => str(n, 30, 'hide'));
+  const tables = list(raw.tables ?? [], 8, 'tables').map((t) => {
+    const need = {};
+    for (const [k, tag] of Object.entries(t?.need ?? {})) {
+      if (!(Number(k) >= 0 && Number(k) < LABELS.length) || !tagIds.includes(tag)) throw new Error('bad need');
+      need[k] = tag;
+    }
+    const id = str(t.id, 20, 'table id');
+    if (!/^[a-z0-9-]{2,20}$/.test(id) || ['open', 'roller', 'keto', 'vault'].includes(id)) throw new Error('bad table id');
+    return { id, name: str(t.name, 20, 'table name').toUpperCase(), rule: str(t.rule, 60, 'rule'),
+      e: str(t.e, 8, 'table emoji'), luxe: t.luxe === true, need };
+  });
+  if (new Set(tables.map((t) => t.id)).size !== tables.length) throw new Error('dup table');
+  return { items, hide, tables };
+}
+
+// Rebuild POOLS/TABLES in place from the built-ins plus `cfg`. Never empties a reel or duplicates a name.
+export function applyConfig(cfg) {
+  const { items, hide, tables } = cleanConfig(cfg ?? EMPTY_CONFIG);
+  const taken = new Set(BASE_POOLS.flat().map((it) => it.n));
+  POOLS.forEach((pool, k) => {
+    pool.length = 0;
+    pool.push(...BASE_POOLS[k]);
+  });
+  for (const it of items) {
+    if (taken.has(it.n)) continue;
+    taken.add(it.n);
+    POOLS[it.r].push(i(it.e, it.n, it.t, it.a));
+  }
+  POOLS.forEach((pool, k) => {
+    for (const n of hide) {
+      const at = pool.findIndex((it) => it.n === n);
+      if (at >= 0 && pool.length > 3) pool.splice(at, 1);
+    }
+  });
+  TABLES.length = BASE_TABLE_COUNT;
+  TABLES.push(...tables);
+}
+
+// Per-user synced prefs (no profile data, just choices).
+export function cleanSettings(raw) {
+  if (!raw || typeof raw !== 'object') throw new Error('bad settings');
+  const allergenIds = ALLERGENS.map((a) => a.id);
+  return {
+    table: str(raw.table ?? 'open', 20, 'table'),
+    avoid: list(raw.avoid ?? [], 20, 'avoid').filter((a) => allergenIds.includes(a)),
+    blocked: list(raw.blocked ?? [], 200, 'blocked').map((n) => str(n, 30, 'blocked')),
+  };
+}

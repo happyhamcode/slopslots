@@ -79,3 +79,13 @@ Push to `main` and Vercel auto-deploys it. thats it. THE FUTURE IS NOW!!!
 *please slop responsibly*
 
 </div>
+
+## 🔐 DISCORD LOGIN + ADMIN (v2, needs setup)
+
+Login is Discord OAuth (implicit grant, no client secret). Players sync allergies/blacklist/table across devices; the owner gets an in-app **ADMIN** button. Until `DISCORD_CLIENT_ID` is set in `app.js` the login is hidden and the site works exactly like before.
+
+1. Discord Developer Portal: new application, copy the **Client ID**, add redirect `https://slopslots.happyham.games/`.
+2. Put the Client ID in `DISCORD_CLIENT_ID` (`app.js`).
+3. Vercel: add a **private Blob store** to the project (sets `BLOB_READ_WRITE_TOKEN`) and set env `ADMIN_DISCORD_ID` to your Discord user id.
+
+Storage: `config.json` (admin edits) and `settings/<sha256 of discord id>.json` (prefs only: table, allergies, blacklist). No names, avatars or ids are stored.
