@@ -36,8 +36,10 @@ Then **JACKPOT!!!** and u get a bowl with a name like *"THE HOT HONEY WHALE"*. u
 - 🛑 **MANUAL STOP** on every reel. skill? luck? DOES NOT MATTER!!! (its luck)
 - 🔒 **HOLD + SET & LOCK** any reel. only want rice? LOCK IT. u r the boss of the slop
 - 💎 **VIP TABLES**: High Roller (wagyu + caviar + GOLD FLAKES), Keto Lounge, Veggie Vault
-- ⚠️ **ALLERGIES MENU** so nobody gets hurt. we r a *responsible* casino
+- ⚠️ **ALLERGIES MENU** (now with peanuts + tree nuts) so nobody gets hurt. we r a *responsible* casino
+- 🥄 **INGREDIENT PICKER**: hate bell peppers? UNTICK THEM. per-reel blacklist, saved on ur device
 - 📋 **COPY RECIPE** and show ur friends ur BIG WIN
+- 📣 **SHARE WIN** to X, Facebook, Reddit, WhatsApp, Telegram, Bluesky + Discord
 - 🔊 **SOUND EFFECTS** made with pure math (Web Audio, no mp3s, ur welcome)
 - 📱 works on ur phone. yes even ur Razr (ok not the 2004 one)
 
