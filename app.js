@@ -8,7 +8,7 @@ const $ = (s) => document.querySelector(s);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rand = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
 // Public id of the Discord application. Empty = login hidden. Register this site's origin + "/" as its redirect.
-const DISCORD_CLIENT_ID = '';
+const DISCORD_CLIENT_ID = '1566779549105266698';
 
 let onSet = () => {};
 const store = {
