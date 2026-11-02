@@ -461,7 +461,7 @@ const api = async (path, method = 'GET', body) => {
 function takeLoginRedirect() {
   const h = new URLSearchParams(location.hash.slice(1));
   if (!h.get('access_token')) return;
-  history.replaceState(null, '', location.pathname + location.search);
+  window.history.replaceState(null, '', location.pathname + location.search); // not `history`: that's the spin log above
   if (!h.get('state') || h.get('state') !== store.get('oauth', null)) return;
   store.set('oauth', null);
   session = { token: h.get('access_token'), exp: Date.now() + Number(h.get('expires_in') || 0) * 1000 };

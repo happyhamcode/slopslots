@@ -191,7 +191,9 @@ a.opt{display:block;text-align:center;text-decoration:none}
 .form{display:grid;gap:8px;margin-top:8px}
 .form input:not([type=checkbox]){font:700 14px 'Orbitron';padding:9px 10px;border:2px solid #b8860b;border-radius:10px;background:#0008;color:#fff}
 #admin-tables .row{justify-content:space-between}
-#acct{font:inherit}
+.acct{position:absolute;top:14px;right:16px;z-index:5;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#who{font:700 12px 'Orbitron';letter-spacing:2px;color:#ffd84a}
+@media (max-width:760px){.acct{position:static;justify-content:center;margin-bottom:8px}}
 @media (max-width:760px){
   .plate{font-size:14px;letter-spacing:.5px}
   .chip{font-size:12px;padding:6px 10px 3px}
