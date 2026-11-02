@@ -3,6 +3,7 @@ import {
   spin, bowlName, recipeText, shareLinks, shareText, SHARE_URL,
   BASE_POOLS, TAGS, EMPTY_CONFIG, applyConfig, cleanConfig, cleanSettings,
 } from './slots.js';
+import { ICONS as BRAND } from './icons.js';
 
 const $ = (s) => document.querySelector(s);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -207,8 +208,6 @@ setInterval(() => {
 /* ---------- tables, allergies, reel picker ---------- */
 const msg = (t) => { $('#msg').textContent = t; };
 
-const allergyBtn = Object.assign(document.createElement('button'), { className: 'chip warn', type: 'button', id: 'allergy-btn' });
-allergyBtn.onclick = () => $('#allergy').showModal();
 for (const t of TABLES) {
   const chip = Object.assign(document.createElement('button'), { className: 'chip', type: 'button', textContent: `${t.e} ${t.name}` });
   chip.dataset.table = t.id;
@@ -226,12 +225,12 @@ for (const t of TABLES) {
 }
 const ingsBtn = Object.assign(document.createElement('button'), { className: 'chip warn', type: 'button', id: 'ings-btn' });
 ingsBtn.onclick = () => { renderIngs(); $('#ings').showModal(); };
-$('#tables').append(ingsBtn, allergyBtn);
+$('#tables').append(ingsBtn);
 
 function renderTables() {
   document.querySelectorAll('[data-table]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.table === table.id)));
-  allergyBtn.textContent = `⚠ ALLERGIES${avoid.length ? ` (${avoid.length})` : ''}`;
-  ingsBtn.textContent = `🥄 INGREDIENTS${blocked.length ? ` (-${blocked.length})` : ''}`;
+  const hidden = avoid.length + blocked.length;
+  ingsBtn.textContent = `🥄 EDIT INGREDIENTS${hidden ? ` (${hidden})` : ''}`;
 }
 
 // Pools changed (table or allergies): drop locks that no longer fit, re-roll reels showing banned items.
@@ -269,26 +268,19 @@ for (const a of ALLERGENS) {
     const bad = emptyReels(np);
     if (bad.length) {
       cb.checked = !cb.checked;
-      $('#allergy-err').textContent = `NOTHING LEFT ON ${LABELS[bad[0]]} AT ${table.name}. TRY ANOTHER TABLE.`;
+      ingsErr(`NOTHING LEFT ON ${LABELS[bad[0]]} AT ${table.name}. TRY ANOTHER TABLE.`);
       return;
     }
-    $('#allergy-err').textContent = '';
+    ingsErr('');
     avoid = wanted; pools = np;
     store.set('avoid', avoid);
     rebuild();
+    renderIngs();
   };
   const label = Object.assign(document.createElement('label'), { className: 'chk' });
   label.append(cb, ` ${a.name}`);
   allergyOpts.append(label);
 }
-$('#allergy-clear').onclick = () => {
-  allergyOpts.querySelectorAll('input').forEach((c) => { c.checked = false; });
-  $('#allergy-err').textContent = '';
-  avoid = []; pools = poolsFor(table, avoid, blocked);
-  store.set('avoid', avoid);
-  rebuild();
-};
-$('#allergy-ok').onclick = () => $('#allergy').close();
 
 /* ---------- ingredient picker (per-reel blacklist) ---------- */
 let ingReel = 0;
@@ -315,16 +307,23 @@ function renderIngs() {
     return b;
   }));
   $('#ings-opts').replaceChildren(...opts.map((it) => {
-    const cb = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !blocked.includes(it.n) });
+    const cb = Object.assign(document.createElement('input'), { type: 'checkbox', checked: blocked.includes(it.n) });
     cb.onchange = () => {
-      if (!applyBlocked(cb.checked ? blocked.filter((n) => n !== it.n) : [...blocked, it.n])) cb.checked = !cb.checked;
+      if (!applyBlocked(cb.checked ? [...blocked, it.n] : blocked.filter((n) => n !== it.n))) cb.checked = !cb.checked;
     };
     const label = Object.assign(document.createElement('label'), { className: 'chk' });
     label.append(cb, ' ', Object.assign(document.createElement('span'), { className: 'e', textContent: it.e }), ` ${it.n}`);
     return label;
   }));
 }
-$('#ings-reset').onclick = () => { applyBlocked([]); renderIngs(); };
+$('#ings-reset').onclick = () => {
+  allergyOpts.querySelectorAll('input').forEach((c) => { c.checked = false; });
+  avoid = []; blocked = []; pools = poolsFor(table, avoid, blocked);
+  store.set('avoid', avoid); store.set('blocked', blocked);
+  ingsErr('');
+  rebuild();
+  renderIngs();
+};
 $('#ings-ok').onclick = () => $('#ings').close();
 
 function setLock(k, item) {
@@ -354,7 +353,7 @@ const setBusy = (b) => {
   spinning = b;
   $('#machine').classList.toggle('busy', b);
   for (const id of ['#spin', '#max', '#again']) $(id).disabled = b;
-  document.querySelectorAll('.plate, [data-table], #allergy-btn, #ings-btn').forEach((x) => { x.disabled = b; });
+  document.querySelectorAll('.plate, [data-table], #ings-btn').forEach((x) => { x.disabled = b; });
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const JACKPOT_DELAY_MS = 500;
@@ -612,14 +611,26 @@ $('#copy').onclick = async () => {
   setTimeout(() => { btn.innerHTML = old; }, 1500);
 };
 /* ---------- share ---------- */
+const icon = (id) => {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', BRAND[id]);
+  svg.append(p);
+  return svg;
+};
+const shareItem = (tag, id, name, props) => {
+  const n = Object.assign(document.createElement(tag), { className: 'opt', ...props });
+  n.append(icon(id), name);
+  return n;
+};
 $('#share-btn').onclick = () => {
   const text = shareText(current, $('#win-name').textContent.replace(/"/g, ''));
   const note = (t) => { $('#share-msg').textContent = t; };
   note('');
-  const links = shareLinks(text).map((l) => Object.assign(document.createElement('a'), {
-    className: 'opt', href: l.href, target: '_blank', rel: 'noopener noreferrer', textContent: l.name,
-  }));
-  const discord = Object.assign(document.createElement('button'), { className: 'opt', type: 'button', textContent: 'DISCORD' });
+  const links = shareLinks(text).map((l) => shareItem('a', l.id, l.name, { href: l.href, target: '_blank', rel: 'noopener noreferrer' }));
+  const discord = shareItem('button', 'discord', 'DISCORD', { type: 'button' });
   discord.onclick = async () => {
     try { await navigator.clipboard.writeText(`${text} ${SHARE_URL}`); note('COPIED! PASTE IT IN DISCORD'); }
     catch { note('COULD NOT COPY, TRY COPY RECIPE'); }
@@ -627,7 +638,7 @@ $('#share-btn').onclick = () => {
   };
   const extra = [discord];
   if (navigator.share) {
-    const native = Object.assign(document.createElement('button'), { className: 'opt', type: 'button', textContent: 'MORE…' });
+    const native = shareItem('button', 'more', 'MORE…', { type: 'button' });
     native.onclick = () => navigator.share({ text, url: SHARE_URL }).catch(() => {});
     extra.push(native);
   }

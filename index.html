@@ -101,15 +101,19 @@
 </dialog>
 
 <dialog id="ings" aria-labelledby="ings-title">
-  <div class="card plain">
+  <div class="card plain wide">
     <div class="in">
-      <div class="title" id="ings-title">🥄 PICK YOUR INGREDIENTS</div>
-      <p class="hint">UNTICK ANYTHING YOU NEVER WANT TO SEE</p>
+      <div class="title" id="ings-title">🥄 EDIT INGREDIENTS</div>
+      <p class="hint">TICKED ITEMS NEVER SHOW UP ON THE REELS</p>
+      <h3 class="sub">ALLERGIES &amp; AVOIDS</h3>
+      <div class="opts checks" id="allergy-opts"></div>
+      <p class="fine">Best guess from typical recipes. Always check real labels, this is a slot machine.</p>
+      <h3 class="sub">INGREDIENTS <small>(TICK TO HIDE)</small></h3>
       <div class="opts tabs" id="ings-tabs" role="group" aria-label="Reel"></div>
       <div class="opts checks" id="ings-opts"></div>
       <p class="err" id="ings-err" role="alert"></p>
       <div class="btns">
-        <button class="maxbet" id="ings-reset" type="button">ALL ON</button>
+        <button class="maxbet" id="ings-reset" type="button">RESET ALL</button>
         <button class="maxbet" id="ings-ok" type="button">DONE</button>
       </div>
     </div>
@@ -146,22 +150,6 @@
       <div class="btns">
         <button class="maxbet" id="admin-cancel" type="button">CANCEL</button>
         <button class="maxbet" id="admin-save" type="button">SAVE LIVE</button>
-      </div>
-    </div>
-  </div>
-</dialog>
-
-<dialog id="allergy" aria-labelledby="allergy-title">
-  <div class="card plain">
-    <div class="in">
-      <div class="title" id="allergy-title">⚠ ALLERGIES &amp; AVOIDS</div>
-      <p class="hint">TICKED ITEMS NEVER SHOW UP ON THE REELS</p>
-      <div class="opts checks" id="allergy-opts"></div>
-      <p class="fine">Best guess from typical recipes. Always check real labels, this is a slot machine.</p>
-      <p class="err" id="allergy-err" role="alert"></p>
-      <div class="btns">
-        <button class="maxbet" id="allergy-clear" type="button">CLEAR ALL</button>
-        <button class="maxbet" id="allergy-ok" type="button">DONE</button>
       </div>
     </div>
   </div>

@@ -175,14 +175,15 @@ dialog::backdrop{background:radial-gradient(circle,#0003 20%,#000d 75%)}
 .opts.checks{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 .opt{font-size:15px;padding:10px 10px 7px;border-radius:12px;text-align:left}
 .opt.any{grid-column:1/-1;text-align:center}
-.chk{display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere;font:700 13px 'Orbitron';letter-spacing:2px;padding:10px;border:2px solid #b8860b;border-radius:10px;background:#0006;cursor:pointer}
+.chk{display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:break-word;font:700 13px 'Orbitron';letter-spacing:2px;padding:10px;border:2px solid #b8860b;border-radius:10px;background:#0006;cursor:pointer}
 .chk input{flex:none;width:20px;height:20px;accent-color:#ffd84a}
 .chk:has(input:checked){background:#ffd84a;color:#3a1a00}
 .card.plain .btns{margin-top:14px}
 .opts.tabs{grid-template-columns:repeat(auto-fit,minmax(86px,1fr));max-height:none;margin:12px 0 0}
 .opt.tab{font-size:13px;padding:8px 6px 5px;text-align:center}
-.opts.shares{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
-a.opt{display:block;text-align:center;text-decoration:none}
+.opts.shares{display:flex;flex-wrap:wrap;justify-content:center}
+.opts.shares .opt{flex:0 0 150px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;text-decoration:none}
+.opts.shares svg{width:18px;height:18px;fill:currentColor;flex:none}
 .chk .e{font-family:var(--emoji)}
 .card .btns{flex-wrap:wrap}
 .card.wide{width:720px}
