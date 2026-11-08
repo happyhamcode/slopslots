@@ -120,7 +120,8 @@ dialog::backdrop{background:radial-gradient(circle,#0003 20%,#000d 75%)}
 @keyframes bob{to{transform:translateY(-14px) rotate(14deg)}}
 
 /* lever only fits beside the machine on wide screens */
-@media (max-width:1500px){.lever{display:none}}
+@media (max-width:1560px){.lever{display:none}}
+@media (min-width:1561px){.machine{margin-right:64px}.side.left{margin-left:64px}}
 /* narrow desktop / tablet: drop left panel, winners go under the machine */
 @media (max-width:1240px){
   .wrap{flex-direction:column;align-items:center}
